@@ -1,0 +1,9 @@
+=== RH Lean Project ===
+Dato: Mon Sep 21 17:46:47 UTC 2026
+Lean: Lean (version 4.35.0-rc2, x86_64-unknown-linux-gnu, commit 11acb17ec6b07a8f9e9173e6845197929540936b, Release)
+
+Beviste teorem (sorry-frie):
+theorem vonMangoldt_prime (p : ℕ) (hp : p.Prime) :
+theorem vonMangoldt_nonneg (n : ℕ) : 0 ≤ Λ n :=
+theorem rh_no_zeros_off_line (h : RiemannHypothesis)
+theorem rh_critical_strip (h : RiemannHypothesis)

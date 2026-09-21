@@ -1,0 +1,31 @@
+{"synthetic": false,
+ "schemaVersion": "2025-09-10",
+ "outputs":
+ {"o": ["0f0bd0f4e1fe23e8.olean"],
+  "m": false,
+  "i": "1d19e1b99028ecb2.ilean",
+  "c": "7678e3c0a9320f11.c"},
+ "log":
+ [{"message":
+   ".> LEAN_PATH=/home/johan/rh_lean/.lake/packages/Cli/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/batteries/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/Qq/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/aesop/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/proofwidgets/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/importGraph/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/LeanSearchClient/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/plausible/.lake/build/lib/lean:/home/johan/rh_lean/.lake/packages/mathlib/.lake/build/lib/lean:/home/johan/rh_lean/.lake/build/lib/lean /home/johan/.elan/toolchains/leanprover--lean4---v4.35.0-rc2/bin/lean /home/johan/rh_lean/RhLean.lean -o /home/johan/rh_lean/.lake/build/lib/lean/RhLean.olean -i /home/johan/rh_lean/.lake/build/lib/lean/RhLean.ilean -c /home/johan/rh_lean/.lake/build/ir/RhLean.c --setup /home/johan/rh_lean/.lake/build/ir/RhLean.setup.json --json",
+   "level": "trace"}],
+ "inputs":
+ [["deps",
+   [["rh_lean/RhLean:extraDep", [["@rh_lean:extraDep", "00000000000006bb"]]],
+    ["imports",
+     [["RhLean.Basic transitive imports (legacy)", "c0906e3f4022aaac"],
+      ["RhLean.Basic:importAllArts", "1eacb9f9e0460ce4"]]]]],
+  ["libs",
+   [["import dynlibs", "00000000000006bb"],
+    ["package external libraries", "00000000000006bb"],
+    ["module dynlibs", "00000000000006bb"],
+    ["module plugins", "00000000000006bb"]]],
+  ["Lean 4.35.0, commit 11acb17ec6b07a8f9e9173e6845197929540936b",
+   "2044b061b657ebda"],
+  ["/home/johan/rh_lean/RhLean.lean", "1d613912bee5b20c"],
+  ["options", "00000000000006bb"],
+  ["isModule: false", "feefd2a0d3a1847e"],
+  ["Module.name: RhLean", "89abf177968f20e7"],
+  ["Package.id?: (some rh_lean)", "3e76c717ff9b288d"],
+  ["Module.leanArgs: #[]", "00000000000006bb"]],
+ "depHash": "7b09a9e8e36d36b8"}
