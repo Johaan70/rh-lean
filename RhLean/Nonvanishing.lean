@@ -62,51 +62,26 @@ theorem rh_reduces_to_strip :
       rw [Complex.cos_eq_zero_iff] at hcos
       obtain ⟨k, hk⟩ := hcos
       have hpi : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr pi_ne_zero
-      -- Extract 1 - s = 2k + 1
       have hone_sub_s : (1 : ℂ) - s = 2 * k + 1 := by
-        have : (π : ℂ) * ((1 - s) - (2 * k + 1)) = 0 := by
-          have hk2 : ↑π * (1 - s) / 2 = (2 * ↑k + 1) * ↑π / 2 := hk
-          field_simp [hpi] at hk2
-          linear_combination hk2
-        rcases mul_eq_zero.mp this with h1 | h1
-        · exact absurd h1 hpi
-        · linarith [h1]
-      -- Real part: simp fully
-      have hk_re : (1 : ℝ) - s.re = 2 * (k : ℝ) + 1 := by
-        have := congr_arg Complex.re hone_sub_s
-        simp only [sub_re, one_re, add_re, mul_re, intCast_re, intCast_im,
-                   ofReal_re, ofReal_im, mul_zero, sub_zero, one_re] at this
-        linarith
-      -- Imag part
-      have hk_im : s.im = 0 := by
-        have := congr_arg Complex.im hone_sub_s
-        simp only [sub_im, one_im, add_im, mul_im, intCast_re, intCast_im,
-                   ofReal_re, ofReal_im, mul_zero, add_zero, one_im] at this
-        linarith
-      have hse_re : s.re = -2 * (k : ℝ) := by linarith
-      have hknn : 0 ≤ k := by exact_mod_cast (show (0 : ℝ) ≤ k by linarith)
-      have hkne : k ≠ 0 := by
-        intro heq; apply hs0; apply Complex.ext
-        · simp only [zero_re]; push_cast [heq] at hse_re; linarith
-        · simp only [zero_im]; linarith
+        have key : ↑π * (1 - s) = ↑π * (2 * ↑k + 1) := by
+          linear_combination 2 * hk
+        exact mul_left_cancel₀ hpi key
+      -- Full simp (not simp only) knows re_ofNat and intCast_re
+      have hre1 := congr_arg Complex.re hone_sub_s
+      have him1 := congr_arg Complex.im hone_sub_s
+      simp at hre1 him1
+      have hk_re : s.re = -2 * k := by linarith
+      have hk_im : s.im = 0 := by linarith
+      have hknn : 0 ≤ k := by exact_mod_cast (show (0:ℝ) ≤ k by linarith)
+      have hkne : k ≠ 0 := fun heq => hs0 (by
+        apply Complex.ext
+        · simp only [zero_re]; push_cast [heq] at hk_re; linarith
+        · simp only [zero_im]; linarith)
       have hkpos : 0 < k := lt_of_le_of_ne hknn (Ne.symm hkne)
-      -- s = -2k
-      have hs_eq : s = -2 * (k : ℂ) := by
-        apply Complex.ext
-        · simp only [neg_mul, neg_re, mul_re, ofReal_re, intCast_re,
-                     ofReal_im, intCast_im, mul_zero, sub_zero]; push_cast; linarith
-        · simp only [neg_mul, neg_im, mul_im, ofReal_re, intCast_re,
-                     ofReal_im, intCast_im, mul_zero, add_zero]; push_cast; linarith
-      -- Apply hntriv: s = -2*(k-1+1) = -2*(n+1) where n = k-1
-      apply hntriv ⟨(k - 1).toNat, by
-        rw [hs_eq]
-        apply Complex.ext
-        · simp only [neg_mul, neg_re, mul_re, ofReal_re, intCast_re,
-                     ofReal_im, intCast_im, mul_zero, sub_zero, add_re, one_re, natCast_re]
-          have hk1 : (0 : ℤ) ≤ k - 1 := by omega
-          have : ((k - 1).toNat : ℤ) = k - 1 := Int.toNat_of_nonneg hk1
-          push_cast [this]; push_cast; ring
-        · simp only [neg_mul, neg_im, mul_im, ofReal_re, intCast_re,
-                     ofReal_im, intCast_im, mul_zero, add_zero, add_im, one_im, natCast_im]
-          push_cast; linarith⟩
+      -- Extract n directly: k = n + 1 (avoids toNat casts)
+      obtain ⟨n, hn⟩ : ∃ n : ℕ, k = (n : ℤ) + 1 := ⟨(k - 1).toNat, by omega⟩
+      have hkR : (k : ℝ) = (n : ℝ) + 1 := by exact_mod_cast hn
+      apply hntriv ⟨n, by apply Complex.ext <;> simp <;> linarith⟩
     · exact h s hzero (lt_of_not_ge hle) (lt_of_not_ge hge)
+
+#print axioms rh_reduces_to_strip
