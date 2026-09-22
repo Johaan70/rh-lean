@@ -4,7 +4,7 @@ Lean 4 formalization toward the Riemann Hypothesis using Mathlib.
 
 ## Status
 
-4 sorry-free theorems proven:
+7 sorry-free theorems proven (verified with #print axioms):
 
 - `vonMangoldt_prime` — Λ(p) = log(p) for primes
 - `vonMangoldt_nonneg` — Λ(n) ≥ 0 for all n  
@@ -19,6 +19,10 @@ def RiemannHypothesis : Prop :=
             (_ : s ≠ 1),
   s.re = 1 / 2
 ```
+
+- `zeta_zero_symmetric` — ζ(s) = 0 → ζ(1−s) = 0
+- `zeta_eq_functional` — functional equation in reverse direction
+- `rh_reduces_to_strip` — RH follows from RH restricted to 0 < Re(s) < 1
 
 ## Next steps
 
