@@ -25,7 +25,7 @@ theorem zeta_eq_functional (s : ℂ)
 
 /-- Every nontrivial zero lies in the critical strip 0 < Re(s) < 1. -/
 theorem nontrivial_zero_in_strip (s : ℂ) (hzero : riemannZeta s = 0)
-    (hntriv : ¬∃ n : ℕ, s = -2 * (↑n + 1)) (hne1 : s ≠ 1) :
+    (hntriv : ¬∃ n : ℕ, s = -2 * (↑n + 1)) :
     0 < s.re ∧ s.re < 1 := by
   refine ⟨?_, ?_⟩
   · by_contra hle'
@@ -86,8 +86,8 @@ theorem nontrivial_zero_in_strip (s : ℂ) (hzero : riemannZeta s = 0)
 theorem rh_reduces_to_strip :
     (∀ s : ℂ, riemannZeta s = 0 → 0 < s.re → s.re < 1 → s.re = 1 / 2) →
     RiemannHypothesis := by
-  intro h s hzero hntriv hne1
-  obtain ⟨h0, h1⟩ := nontrivial_zero_in_strip s hzero hntriv hne1
+  intro h s hzero hntriv _
+  obtain ⟨h0, h1⟩ := nontrivial_zero_in_strip s hzero hntriv
   exact h s hzero h0 h1
 
 #print axioms nontrivial_zero_in_strip
