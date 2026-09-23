@@ -4,7 +4,7 @@ Lean 4 formalization toward the Riemann Hypothesis using Mathlib.
 
 ## Status
 
-9 sorry-free theorems proven (verified with #print axioms):
+10 sorry-free theorems proven (verified with #print axioms):
 
 - `vonMangoldt_prime` — Λ(p) = log(p) for primes
 - `vonMangoldt_nonneg` — Λ(n) ≥ 0 for all n  
@@ -28,6 +28,8 @@ def RiemannHypothesis : Prop :=
 - `zeta_zero_quadruple` — nontrivial zeros come in quadruples: ρ, 1−ρ, ρ̄, 1−ρ̄
 
 Conjugation symmetry uses Mathlib's `riemannZeta_conj` (NumberTheory/Harmonic/ZetaAsymp).
+
+- `nontrivial_zero_in_strip` — every nontrivial zero has 0 < Re(s) < 1
 
 ## Next steps
 
