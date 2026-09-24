@@ -4,3 +4,4 @@ import RhLean.Quadruple
 import RhLean.ZetaStrip
 import RhLean.ZetaBridge
 import RhLean.ZetaFormula
+import RhLean.ZetaExtend
