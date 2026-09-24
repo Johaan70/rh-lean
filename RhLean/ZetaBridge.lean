@@ -48,13 +48,54 @@ lemma Ico_pairwise_disjoint :
 /-- 2a-iii: g = 0 on (0,1), so the Mellin integral lives on [1, ∞). -/
 lemma mellin_eq_integral_Ici (s : ℝ) :
     mellin fracTail (-(s : ℂ)) = ∫ t in Ici (1:ℝ), Fint s t := by
-  sorry
+  change ∫ t in Ioi (0:ℝ), Fint s t = ∫ t in Ici (1:ℝ), Fint s t
+  refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero measurableSet_Ioi ?_ ?_
+  · intro t ht
+    rw [mem_Ici] at ht
+    rw [mem_Ioi]
+    linarith
+  · intro t ht
+    rw [Set.mem_sdiff, mem_Ici] at ht
+    have h0 : fracTail t = 0 := by
+      simp [fracTail, Set.indicator, ht.2]
+    simp [Fint, h0]
+
+/-- 2a-iv-1: on [n+1, n+2), the fractional part is t - (n+1). -/
+lemma fract_on_piece (n : ℕ) {t : ℝ} (ht : t ∈ Ico ((n:ℝ) + 1) ((n:ℝ) + 2)) :
+    Int.fract t = t - ((n:ℝ) + 1) := by
+  rw [mem_Ico] at ht
+  rw [Int.fract_eq_iff]
+  refine ⟨by linarith, by linarith, (n:ℤ) + 1, ?_⟩
+  push_cast
+  ring
+
+/-- 2a-iv-2: pointwise, Fint equals the complexified real integrand of `term`. -/
+lemma Fint_on_piece (s : ℝ) (n : ℕ) {t : ℝ} (ht : t ∈ Ico ((n:ℝ) + 1) ((n:ℝ) + 2)) :
+    Fint s t = (((t - ((n:ℝ) + 1)) / t ^ (s + 1) : ℝ) : ℂ) := by
+  have ht' := ht
+  rw [mem_Ico] at ht'
+  have hn : (0:ℝ) ≤ n := Nat.cast_nonneg n
+  have hpos : 0 < t := by linarith
+  have h1 : (1:ℝ) ≤ t := by linarith
+  have hg : fracTail t = ((t - ((n:ℝ) + 1) : ℝ) : ℂ) := by
+    simp only [fracTail, Set.indicator, mem_Ici, h1, ↓reduceIte]
+    rw [fract_on_piece n ht]
+  rw [Fint, hg, smul_eq_mul]
+  rw [show (-(s:ℂ) - 1) = ((-s - 1 : ℝ) : ℂ) by push_cast; ring]
+  rw [← ofReal_cpow hpos.le, ← ofReal_mul]
+  congr 1
+  rw [show (-s - 1) = -(s + 1) by ring, Real.rpow_neg hpos.le, div_eq_mul_inv, mul_comm]
 
 /-- 2a-iv: each piece equals Mathlib's `term`. -/
-lemma integral_piece {s : ℝ} (hs : 0 < s) (n : ℕ) :
+lemma integral_piece {s : ℝ} (_hs : 0 < s) (n : ℕ) :
     ∫ t in Ico ((n:ℝ) + 1) ((n:ℝ) + 2), Fint s t =
       ((ZetaAsymptotics.term (n + 1) s : ℝ) : ℂ) := by
-  sorry
+  rw [setIntegral_congr_fun measurableSet_Ico (fun t ht => Fint_on_piece s n ht)]
+  rw [integral_complex_ofReal, integral_Ico_eq_integral_Ioc]
+  congr 1
+  rw [ZetaAsymptotics.term, intervalIntegral.integral_of_le (by linarith)]
+  push_cast
+  rw [show ((n:ℝ) + 1 + 1) = (n:ℝ) + 2 by ring]
 
 /-- Step 2a: our Mellin F equals Mathlib's termTSum for real s > 1. -/
 theorem F_eq_termTSum {s : ℝ} (hs : 1 < s) :
