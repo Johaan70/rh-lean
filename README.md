@@ -31,6 +31,16 @@ Conjugation symmetry uses Mathlib's `riemannZeta_conj` (NumberTheory/Harmonic/Ze
 
 - `nontrivial_zero_in_strip` — every nontrivial zero has 0 < Re(s) < 1
 
+## Real zeros in the critical strip (new)
+
+- `riemannZeta_ofReal_neg_of_mem_strip` — for real 0 < σ < 1, ζ(σ) is a negative real number
+- `riemannZeta_ne_zero_of_mem_strip` — ζ has no zeros on the real interval (0, 1)
+- `nontrivial_zero_im_ne_zero` — every nontrivial zero has nonzero imaginary part
+
+Proof route: F(s) = ∫₁^∞ {x} x^(-s-1) dx as a Mellin transform (analytic on Re s > 0),
+F = Mathlib's `termTSum`, ζ(s) = s/(s-1) - s·F(s) for s > 1, extended to 0 < σ < 1
+by the identity theorem on a connected domain avoiding s = 1, then a sign argument.
+
 ## Next steps
 
 - Connect ZetaZeros topology to critical strip
