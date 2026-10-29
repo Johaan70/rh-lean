@@ -6,3 +6,4 @@ import RhLean.ZetaBridge
 import RhLean.ZetaFormula
 import RhLean.ZetaExtend
 import RhLean.ZetaSign
+import RhLean.QuasiStrip

@@ -1,0 +1,88 @@
+name: Quasi-band (rh-lean + OpenAI 7/8)
+
+on:
+  push:
+    branches: [quasi-band]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Standalone extraction of openai/math (unchanged Lean sources), pinned.
+  OAI_REPO: https://github.com/CoolRmal/quasi-riemann-seven-eighths.git
+  OAI_COMMIT: 6ff3bd543ba3a58593355f0c011cdb42a8162234
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: rh
+          persist-credentials: false
+
+      - name: Fetch pinned OAI extraction
+        run: |
+          git init oai
+          git -C oai remote add origin "$OAI_REPO"
+          git -C oai fetch --depth 1 origin "$OAI_COMMIT"
+          git -C oai checkout --detach "$OAI_COMMIT"
+          test "$(git -C oai rev-parse HEAD)" = "$OAI_COMMIT"
+
+      - name: Add rh-lean as a library inside the OAI project
+        run: |
+          cp -r rh/RhLean oai/RhLean
+          cp rh/quasi/QuasiFinal.lean oai/RhLean/QuasiFinal.lean
+          cat >> oai/lakefile.toml <<'EOF'
+
+          [[lean_lib]]
+          name = "RhLean"
+          globs = ["RhLean.+"]
+          EOF
+
+      - name: Install pinned Lean toolchain
+        working-directory: oai
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -o "$RUNNER_TEMP/elan-init.sh"
+          sh "$RUNNER_TEMP/elan-init.sh" -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/elan" toolchain install "$(cat lean-toolchain)"
+
+      - name: Prepare dependencies (unchanged upstream patches)
+        working-directory: oai
+        run: bash scripts/prepare-dependencies.sh
+
+      - name: Mathlib cache
+        working-directory: oai
+        run: lake exe cache get
+
+      - name: Build bridge on OAI's own pin (hypothesis form)
+        working-directory: oai
+        run: lake build RhLean.QuasiStrip 2>&1 | tee ../quasistrip.log
+
+      - name: Build unconditional theorem (pulls in the full OAI proof)
+        working-directory: oai
+        run: |
+          set -o pipefail
+          lake build RhLean.QuasiFinal 2>&1 | tee ../quasifinal.log
+
+      - name: Axiom check
+        working-directory: oai
+        run: |
+          set -o pipefail
+          lake env lean RhLean/QuasiFinal.lean 2>&1 | tee ../axioms.log
+          # Only the three standard axioms may appear; no sorryAx.
+          ! grep -q sorryAx ../axioms.log
+          grep -q "depends on axioms: \[propext, Classical.choice, Quot.sound\]" ../axioms.log
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quasi-band-${{ github.run_id }}
+          path: |
+            quasistrip.log
+            quasifinal.log
+            axioms.log
