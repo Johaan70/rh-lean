@@ -41,6 +41,12 @@ Proof route: F(s) = ∫₁^∞ {x} x^(-s-1) dx as a Mellin transform (analytic o
 F = Mathlib's `termTSum`, ζ(s) = s/(s-1) - s·F(s) for s > 1, extended to 0 < σ < 1
 by the identity theorem on a connected domain avoiding s = 1, then a sign argument.
 
+## Quasi-Riemann band (new)
+
+Combined with OpenAI's formal 7/8 zero-free half-plane, verified in CI:
+every nontrivial zero has 1/8 ≤ Re ρ ≤ 7/8 and Im ρ ≠ 0.
+See [docs/kvasi-riemann.md](docs/kvasi-riemann.md) (Norwegian) for findings, limits and assessment.
+
 ## Next steps
 
 - Connect ZetaZeros topology to critical strip
