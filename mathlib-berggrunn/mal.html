@@ -1,0 +1,484 @@
+<title>Mathlibs berggrunn</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Kart over Mathlib bygget fra den faktiske importgrafen: hvert fagområde som en kolonne, hver fil plassert etter hvor mange importlag den hviler på.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: et geologisk lagprofil. Kjernen nederst, ett importlag per høydeenhet,
+   ett fagområde per kolonne; detaljpanel til høyre (under på smal skjerm). */
+:root {
+  --berg: #eef0ec;        /* bakgrunn: lys bergart */
+  --flate: #f8f9f6;       /* paneler */
+  --blekk: #1b2326;       /* tekst og valgt fil */
+  --dempet: #5b676b;      /* sekundær tekst */
+  --prikk: #8e999c;       /* filer i hviletilstand */
+  --linje: #d5dbd8;       /* rutenett og skiller */
+  --lag: #e4e8e3;         /* annethvert lagbånd */
+  --ned: #b5651d;         /* grunnlag: det filen står på */
+  --opp: #1d7b80;         /* det som bygger på filen */
+  --f-vis: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-tekst: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --berg: #111618; --flate: #171e21; --blekk: #e3e8e5; --dempet: #98a4a6;
+    --prikk: #5a676d; --linje: #29343a; --lag: #151c1f; --ned: #e3984c; --opp: #4fb5bb;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --berg: #111618; --flate: #171e21; --blekk: #e3e8e5; --dempet: #98a4a6;
+  --prikk: #5a676d; --linje: #29343a; --lag: #151c1f; --ned: #e3984c; --opp: #4fb5bb;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--berg); color: var(--blekk);
+  font-family: var(--f-tekst); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.ramme { max-width: 1240px; margin: 0 auto; display: grid; gap: 28px; }
+a { color: var(--opp); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, input:focus-visible, canvas:focus-visible {
+  outline: 2px solid var(--ned); outline-offset: 2px;
+}
+
+/* hode */
+.hode { display: grid; gap: 14px; max-width: 72ch; }
+.overline {
+  font-family: var(--f-data); font-size: 12px; letter-spacing: .04em; color: var(--dempet);
+}
+h1 {
+  font-family: var(--f-vis); font-stretch: 112%; font-weight: 800;
+  font-size: clamp(2.2rem, 5.4vw, 3.9rem); line-height: .98; letter-spacing: -.015em;
+  margin: 0; text-wrap: balance;
+}
+.ingress { margin: 0; font-size: 1.07rem; color: var(--blekk); }
+.tall {
+  display: flex; flex-wrap: wrap; gap: 6px 22px; margin: 0; padding: 0;
+  font-family: var(--f-data); font-size: 13px; color: var(--dempet);
+  font-variant-numeric: tabular-nums;
+}
+.tall div { display: flex; gap: 6px; align-items: baseline; }
+.tall dt { order: 2; } .tall dd { margin: 0; color: var(--blekk); font-weight: 500; }
+
+/* kontroller */
+.styring { display: grid; gap: 12px; }
+.sok { position: relative; max-width: 520px; }
+.sok label { display: block; font-family: var(--f-vis); font-stretch: 85%; font-weight: 600;
+  font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dempet); margin-bottom: 6px; }
+.sok input {
+  width: 100%; font: 15px var(--f-data); color: var(--blekk);
+  background: var(--flate); border: 1px solid var(--linje); border-radius: 4px; padding: 10px 12px;
+}
+.forslag {
+  position: absolute; z-index: 5; left: 0; right: 0; top: 100%; margin: 4px 0 0; padding: 4px 0;
+  list-style: none; background: var(--flate); border: 1px solid var(--linje); border-radius: 4px;
+  box-shadow: 0 8px 24px rgb(0 0 0 / .12); max-height: 300px; overflow-y: auto;
+}
+.forslag li { padding: 6px 12px; font: 13px var(--f-data); cursor: pointer; overflow-wrap: anywhere; }
+.forslag li[aria-selected="true"], .forslag li:hover { background: var(--lag); }
+.forslag li span { color: var(--dempet); }
+.knapper { display: flex; flex-wrap: wrap; gap: 8px; }
+.knapper button {
+  font: 500 13px var(--f-tekst); color: var(--blekk); background: transparent;
+  border: 1px solid var(--linje); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+}
+.knapper button:hover { border-color: var(--dempet); }
+.knapper button[aria-pressed="true"] { background: var(--blekk); color: var(--berg); border-color: var(--blekk); }
+
+/* kart + panel */
+.arbeid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+@media (max-width: 900px) { .arbeid { grid-template-columns: minmax(0, 1fr); } }
+.kartboks { min-width: 0; display: grid; gap: 10px; }
+.rull { overflow-x: auto; position: relative; border-top: 1px solid var(--linje); border-bottom: 1px solid var(--linje); }
+canvas { display: block; cursor: crosshair; touch-action: manipulation; }
+.tips {
+  position: absolute; pointer-events: none; z-index: 4; max-width: 300px;
+  background: var(--blekk); color: var(--berg); font: 12px/1.4 var(--f-data);
+  padding: 6px 8px; border-radius: 3px; overflow-wrap: anywhere;
+}
+.forklaring { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--dempet); margin: 0; padding: 0; list-style: none; }
+.forklaring li { display: flex; align-items: center; gap: 7px; }
+.merke { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+.merke.strek { width: 18px; height: 2px; border-radius: 0; background: var(--blekk); }
+
+.panel { background: var(--flate); border: 1px solid var(--linje); border-radius: 6px; padding: 18px; display: grid; gap: 16px; min-width: 0; }
+.panel h2 { margin: 0; font: 500 15px/1.35 var(--f-data); overflow-wrap: anywhere; }
+.omr { font-family: var(--f-vis); font-stretch: 85%; font-weight: 600; font-size: 12px;
+  letter-spacing: .08em; text-transform: uppercase; color: var(--dempet); }
+.fakta { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; margin: 0; font-size: 14px; }
+.fakta dt { color: var(--dempet); }
+.fakta dd { margin: 0; font-family: var(--f-data); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.fakta dd.ned { color: var(--ned); font-weight: 500; } .fakta dd.opp { color: var(--opp); font-weight: 500; }
+.panel h3 { margin: 0 0 6px; font-family: var(--f-vis); font-stretch: 85%; font-weight: 600; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--dempet); }
+.fordeling { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.fordeling li { display: grid; grid-template-columns: 1fr auto; gap: 2px 10px; }
+.fordeling .stolpe { grid-column: 1 / -1; height: 4px; background: var(--lag); border-radius: 2px; overflow: hidden; }
+.fordeling .stolpe i { display: block; height: 100%; background: var(--ned); }
+.fordeling span:last-child { font-family: var(--f-data); font-variant-numeric: tabular-nums; color: var(--dempet); }
+.kjede { margin: 0; padding: 0; list-style: none; max-height: 260px; overflow-y: auto; font: 12px/1.45 var(--f-data); border-left: 2px solid var(--blekk); }
+.kjede li { padding: 1px 0 1px 10px; display: grid; grid-template-columns: 2.6em 1fr; gap: 6px; }
+.kjede li span { color: var(--dempet); text-align: right; font-variant-numeric: tabular-nums; }
+.kjede button, .liste button { all: unset; cursor: pointer; overflow-wrap: anywhere; }
+.kjede button:hover, .liste button:hover { text-decoration: underline; }
+.kjede button:focus-visible, .liste button:focus-visible { outline: 2px solid var(--ned); }
+details summary { cursor: pointer; font-size: 13px; color: var(--dempet); }
+.liste { margin: 8px 0 0; padding: 0; list-style: none; font: 12px/1.5 var(--f-data); max-height: 200px; overflow-y: auto; }
+.kilde { font-size: 13px; }
+
+/* områdetabell */
+.seksjon { display: grid; gap: 12px; }
+.seksjon h2 { margin: 0; font-family: var(--f-vis); font-stretch: 105%; font-weight: 700; font-size: 1.45rem; text-wrap: balance; }
+.seksjon p { margin: 0; max-width: 68ch; }
+.tabellrull { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 14px; }
+th { text-align: left; font-family: var(--f-vis); font-stretch: 85%; font-weight: 600; font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--dempet); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--linje); }
+td { padding: 5px 10px 5px 0; border-bottom: 1px solid var(--linje); vertical-align: middle; }
+td.n { font-family: var(--f-data); font-variant-numeric: tabular-nums; text-align: right; }
+th.n { text-align: right; }
+td.mappe { font-family: var(--f-data); font-size: 12px; color: var(--dempet); }
+.dybdestolpe { position: relative; height: 10px; min-width: 160px; background: var(--lag); border-radius: 2px; }
+.dybdestolpe i { position: absolute; top: 0; bottom: 0; background: var(--linje); border-radius: 2px; }
+.dybdestolpe b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--blekk); }
+.metode { font-size: 14px; color: var(--dempet); display: grid; gap: 8px; max-width: 72ch; }
+.metode p { margin: 0; }
+code { font-family: var(--f-data); font-size: .92em; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="ramme">
+  <header class="hode">
+    <div class="overline" id="overline">Mathlib</div>
+    <h1>Mathlibs berggrunn</h1>
+    <p class="ingress">Hver prikk er én fil i Mathlib. Høyden er hvor mange importlag filen hviler på, med Lean-kjernen nederst. Kolonnene er fagområdene, sortert etter hvor dypt de typisk ligger. Velg en fil for å se hva den står på, og hva som står på den.</p>
+    <dl class="tall" id="tall"></dl>
+  </header>
+
+  <section class="styring" aria-label="Velg fil">
+    <div class="sok">
+      <label for="sokefelt">Finn en fil</label>
+      <input id="sokefelt" type="search" autocomplete="off" spellcheck="false" placeholder="for eksempel Sylow, FundThmCalculus, Yoneda" role="combobox" aria-expanded="false" aria-controls="forslag" aria-autocomplete="list">
+      <ul class="forslag" id="forslag" role="listbox" hidden></ul>
+    </div>
+    <div class="knapper" id="knapper"></div>
+  </section>
+
+  <section class="arbeid">
+    <div class="kartboks">
+      <div class="rull" id="rull">
+        <canvas id="kart" tabindex="0" aria-label="Lagprofil over Mathlibs filer etter fagområde og importdybde"></canvas>
+        <div class="tips" id="tips" hidden></div>
+      </div>
+      <ul class="forklaring">
+        <li><span class="merke" style="background:var(--ned)"></span>står på (importerer, direkte eller indirekte)</li>
+        <li><span class="merke" style="background:var(--opp)"></span>bygger på den valgte filen</li>
+        <li><span class="merke strek"></span>lengste importkjede ned til kjernen</li>
+        <li><span class="merke" style="background:var(--prikk)"></span>urørt</li>
+      </ul>
+    </div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </section>
+
+  <section class="seksjon">
+    <h2>Hvor dypt ligger hvert område?</h2>
+    <p>Dybden til en fil er lengden på den lengste importkjeden fra filen ned til bunnen. Den svarte streken er medianen for området, og det grå feltet spenner fra første til tredje kvartil. Ordensteori og algebra ligger lavt. Kategoriteori ligger midt i biblioteket, og sannsynlighet, målteori og tallteori ligger øverst.</p>
+    <div class="tabellrull"><table id="tabell"></table></div>
+  </section>
+
+  <section class="seksjon">
+    <h2>Slik er kartet laget</h2>
+    <div class="metode">
+      <p>Grafen er lest direkte fra <code>import</code>-linjene i hver <code>.lean</code>-fil i Mathlib, uten å bygge Lean. Bare importer mellom Mathlib-filer er tatt med. Filer merket <code>deprecated_module</code> er rene omdirigeringer og er fjernet; importer som gikk gjennom dem, peker til det de selv importerer.</p>
+      <p>Område er mappen rett under <code>Mathlib/</code>. Mapper med færre enn 25 filer er slått sammen til «Annet». Antall teoremer og definisjoner er talt med et regulært uttrykk over linjer som begynner med <code>theorem</code>, <code>lemma</code>, <code>def</code>, <code>instance</code> og lignende. Det er et anslag: deklarasjoner som Lean genererer automatisk, er ikke med.</p>
+      <p>Kartet viser avhengigheter mellom filer, ikke mellom enkeltteoremer. At en fil står på en annen, betyr at den importerer den, ikke at hvert teorem i den bruker alt i den andre.</p>
+      <p id="kildelinje"></p>
+    </div>
+  </section>
+</div>
+
+<script>
+const DATA = /*DATA*/null;
+
+const NAVN = {
+  Lean: "Lean-meta", Util: "Verktøy", Tactic: "Taktikker", Control: "Kontrollstrukturer",
+  Logic: "Logikk", Data: "Datastrukturer", Order: "Ordensteori", Basic: "Grunnbegreper",
+  Computability: "Beregnbarhet", Algebra: "Algebra", SetTheory: "Mengdelære", Combinatorics: "Kombinatorikk",
+  GroupTheory: "Gruppeteori", ModelTheory: "Modellteori", CategoryTheory: "Kategoriteori",
+  LinearAlgebra: "Lineær algebra", RingTheory: "Ringteori", AlgebraicTopology: "Algebraisk topologi",
+  Topology: "Topologi", Annet: "Annet", RepresentationTheory: "Representasjonsteori", FieldTheory: "Kroppsteori",
+  Condensed: "Kondenserte mengder", Analysis: "Analyse", Dynamics: "Dynamiske systemer",
+  NumberTheory: "Tallteori", AlgebraicGeometry: "Algebraisk geometri", Geometry: "Geometri",
+  MeasureTheory: "Målteori", Probability: "Sannsynlighet"
+};
+const UTVALG = [
+  ["Sentralgrenseteoremet", "Probability.CentralLimitTheorem"],
+  ["Analysens fundamentalteorem", "MeasureTheory.Integral.IntervalIntegral.FundThmCalculus"],
+  ["Fermat for n = 4", "NumberTheory.FLT.Four"],
+  ["Sylow", "GroupTheory.Sylow"],
+  ["Yoneda", "CategoryTheory.Yoneda"],
+  ["De reelle tallene", "Basic.Real.Basic"],
+  ["Filtre", "Order.Filter.Basic"],
+  ["Grupper", "Algebra.Group.Defs"],
+];
+
+const N = DATA.n.length;
+const nf = new Intl.NumberFormat("nb-NO");
+const omrNavn = a => NAVN[DATA.omraader[a]] || DATA.omraader[a];
+
+// omvendte kanter
+const opp = Array.from({ length: N }, () => []);
+DATA.imp.forEach((l, i) => l.forEach(j => opp[j].push(i)));
+const indeks = new Map(DATA.n.map((x, i) => [x, i]));
+const maksDybde = Math.max(...DATA.dy);
+
+// områdestatistikk, sortert etter median dybde
+const kvartil = (s, q) => s[Math.min(s.length - 1, Math.floor(q * s.length))];
+const omr = DATA.omraader.map((navn, a) => {
+  const dy = [], t = { t: 0, d: 0 };
+  for (let i = 0; i < N; i++) if (DATA.a[i] === a) { dy.push(DATA.dy[i]); t.t += DATA.t[i]; t.d += DATA.d[i]; }
+  dy.sort((x, y) => x - y);
+  return { a, navn, filer: dy.length, t: t.t, d: t.d, med: kvartil(dy, .5), q1: kvartil(dy, .25), q3: kvartil(dy, .75) };
+}).filter(o => o.filer > 0).sort((x, y) => x.med - y.med || x.navn.localeCompare(y.navn));
+const kolonne = new Map(omr.map((o, k) => [o.a, k]));
+
+// deterministisk spredning innen kolonnen
+function hash(i, s) { let h = (i + 1) * 2654435761 ^ s * 40503; h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+const jx = Float32Array.from({ length: N }, (_, i) => hash(i, 1));
+const jy = Float32Array.from({ length: N }, (_, i) => hash(i, 2) - .5);
+const rad = Float32Array.from({ length: N }, (_, i) => Math.min(3.4, 1 + .5 * Math.log2(1 + DATA.t[i] + DATA.d[i])));
+
+// ---------- hode ----------
+const kortCommit = DATA.commit.slice(0, 7);
+const dato = new Date(DATA.dato + "T12:00:00Z").toLocaleDateString("nb-NO", { day: "numeric", month: "long", year: "numeric" });
+document.getElementById("overline").textContent = `Mathlib · commit ${kortCommit} · ${dato}`;
+const sum = k => DATA[k].reduce((x, y) => x + y, 0);
+const kanter = DATA.imp.reduce((x, l) => x + l.length, 0);
+document.getElementById("tall").innerHTML = [
+  [nf.format(N), "filer"], [nf.format(kanter), "importer"], [maksDybde, "lag"],
+  ["≈ " + nf.format(Math.round(sum("t") / 1000) * 1000), "teoremer og lemmaer"],
+  ["≈ " + nf.format(Math.round(sum("d") / 1000) * 1000), "definisjoner m.m."],
+].map(([v, k]) => `<div><dd>${v}</dd><dt>${k}</dt></div>`).join("");
+const repo = "https://github.com/leanprover-community/mathlib4";
+document.getElementById("kildelinje").innerHTML =
+  `Data fra <a href="${repo}/tree/${DATA.commit}" target="_blank" rel="noopener">mathlib4 på commit ${kortCommit}</a> (${dato}).`;
+
+// ---------- valg ----------
+let valgt = -1, ned = null, oppSett = null, sti = [];
+function lukning(start, kant) {
+  const sett = new Uint8Array(N), koe = [start]; sett[start] = 1;
+  while (koe.length) { const x = koe.pop(); for (const y of kant[x]) if (!sett[y]) { sett[y] = 1; koe.push(y); } }
+  sett[start] = 0; return sett;
+}
+function lengsteKjede(s) {
+  const k = [s]; let x = s;
+  while (DATA.imp[x].length) { let b = DATA.imp[x][0]; for (const y of DATA.imp[x]) if (DATA.dy[y] > DATA.dy[b]) b = y; k.push(b); x = b; }
+  return k;
+}
+function velg(i) {
+  valgt = i;
+  if (i < 0) { ned = oppSett = null; sti = []; }
+  else { ned = lukning(i, DATA.imp); oppSett = lukning(i, opp); sti = lengsteKjede(i); }
+  document.querySelectorAll("#knapper button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.i === i)));
+  tegn(); visPanel();
+  // hold den valgte filen synlig når kartet er bredere enn skjermen
+  if (i >= 0 && G && G.W > rull.clientWidth) {
+    const x = G.px[i];
+    if (x < rull.scrollLeft + 40 || x > rull.scrollLeft + rull.clientWidth - 40) rull.scrollLeft = Math.max(0, x - rull.clientWidth * .6);
+  }
+}
+
+// ---------- tegning ----------
+const lerret = document.getElementById("kart"), rull = document.getElementById("rull"), ctx = lerret.getContext("2d");
+let G = null;
+function farger() {
+  const s = getComputedStyle(document.documentElement), v = k => s.getPropertyValue(k).trim();
+  return { blekk: v("--blekk"), dempet: v("--dempet"), prikk: v("--prikk"), linje: v("--linje"), lag: v("--lag"), ned: v("--ned"), opp: v("--opp"), berg: v("--berg") };
+}
+function geometri() {
+  const W = Math.max(rull.clientWidth, 860), H = rull.clientWidth < 600 ? 560 : 660;
+  const m = { v: 46, h: 10, o: 14, u: 128 };
+  const kb = (W - m.v - m.h) / omr.length, ys = (H - m.o - m.u) / (maksDybde + 1);
+  const px = new Float32Array(N), py = new Float32Array(N);
+  for (let i = 0; i < N; i++) {
+    const k = kolonne.get(DATA.a[i]);
+    px[i] = m.v + k * kb + kb * (.14 + .72 * jx[i]);
+    py[i] = m.o + (maksDybde - DATA.dy[i] + .5 + jy[i] * .8) * ys;
+  }
+  return { W, H, m, kb, ys, px, py };
+}
+function tegn() {
+  const dpr = window.devicePixelRatio || 1;
+  G = geometri();
+  const { W, H, m, kb, ys, px, py } = G, F = farger();
+  lerret.width = W * dpr; lerret.height = H * dpr; lerret.style.width = W + "px"; lerret.style.height = H + "px";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+  const y = d => m.o + (maksDybde - d + .5) * ys;
+  // lagbånd hvert 20. lag
+  for (let d = 0; d <= maksDybde; d += 20) {
+    if ((d / 20) % 2 === 0) { ctx.fillStyle = F.lag; ctx.fillRect(m.v, y(Math.min(maksDybde, d + 19.5)), W - m.v - m.h, (Math.min(20, maksDybde - d + 1)) * ys); }
+  }
+  ctx.font = `400 11px ${getComputedStyle(document.body).getPropertyValue("--f-data")}`;
+  ctx.fillStyle = F.dempet; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (let d = 0; d <= maksDybde; d += 20) ctx.fillText(String(d), m.v - 8, y(d));
+  ctx.save(); ctx.translate(12, m.o + (H - m.o - m.u) / 2); ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = "center"; ctx.fillText("importlag fra bunnen", 0, 0); ctx.restore();
+  // kolonneskiller
+  ctx.strokeStyle = F.linje; ctx.lineWidth = 1;
+  for (let k = 0; k <= omr.length; k++) { const x = Math.round(m.v + k * kb) + .5; ctx.beginPath(); ctx.moveTo(x, m.o); ctx.lineTo(x, H - m.u); ctx.stroke(); }
+  // prikker
+  const aktiv = valgt >= 0;
+  ctx.globalAlpha = aktiv ? .22 : .8; ctx.fillStyle = F.prikk;
+  ctx.beginPath();
+  for (let i = 0; i < N; i++) { if (aktiv && (ned[i] || oppSett[i] || i === valgt)) continue; ctx.moveTo(px[i] + rad[i], py[i]); ctx.arc(px[i], py[i], rad[i], 0, 6.2832); }
+  ctx.fill(); ctx.globalAlpha = 1;
+  if (aktiv) {
+    for (const [sett, f] of [[oppSett, F.opp], [ned, F.ned]]) {
+      ctx.fillStyle = f; ctx.beginPath();
+      for (let i = 0; i < N; i++) if (sett[i]) { ctx.moveTo(px[i] + rad[i], py[i]); ctx.arc(px[i], py[i], rad[i], 0, 6.2832); }
+      ctx.fill();
+    }
+    // lengste kjede
+    ctx.strokeStyle = F.blekk; ctx.lineWidth = 1.4; ctx.lineJoin = "round"; ctx.beginPath();
+    sti.forEach((i, k) => k ? ctx.lineTo(px[i], py[i]) : ctx.moveTo(px[i], py[i])); ctx.stroke();
+    ctx.fillStyle = F.blekk; for (const i of sti) { ctx.beginPath(); ctx.arc(px[i], py[i], 1.8, 0, 6.2832); ctx.fill(); }
+    ctx.lineWidth = 2; ctx.strokeStyle = F.blekk; ctx.fillStyle = F.berg;
+    ctx.beginPath(); ctx.arc(px[valgt], py[valgt], 6, 0, 6.2832); ctx.fill(); ctx.stroke();
+  }
+  // median per kolonne
+  ctx.strokeStyle = F.blekk; ctx.lineWidth = 2; ctx.globalAlpha = aktiv ? .35 : .9;
+  omr.forEach((o, k) => { const yy = Math.round(y(o.med)) + .5; ctx.beginPath(); ctx.moveTo(m.v + k * kb + kb * .1, yy); ctx.lineTo(m.v + (k + 1) * kb - kb * .1, yy); ctx.stroke(); });
+  ctx.globalAlpha = 1;
+  // kolonnenavn
+  ctx.save(); ctx.fillStyle = F.blekk; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  ctx.font = `600 12px ${getComputedStyle(document.body).getPropertyValue("--f-vis")}`;
+  try { ctx.fontStretch = "condensed"; } catch (e) {}
+  omr.forEach((o, k) => {
+    const x = m.v + (k + .5) * kb;
+    ctx.save(); ctx.translate(x, H - m.u + 10); ctx.rotate(-Math.PI / 3);
+    ctx.fillStyle = valgt >= 0 && DATA.a[valgt] === o.a ? F.ned : F.blekk;
+    ctx.fillText(omrNavn(o.a), 0, 0); ctx.restore();
+  });
+  ctx.restore();
+}
+
+// ---------- treff og verktøytips ----------
+const tips = document.getElementById("tips");
+function naermest(ex, ey) {
+  if (!G) return -1;
+  let b = -1, bd = 64;
+  for (let i = 0; i < N; i++) { const dx = G.px[i] - ex, dy = G.py[i] - ey, d = dx * dx + dy * dy; if (d < bd) { bd = d; b = i; } }
+  return b;
+}
+function posisjon(e) { const r = lerret.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+lerret.addEventListener("mousemove", e => {
+  const [x, y] = posisjon(e), i = naermest(x, y);
+  if (i < 0) { tips.hidden = true; return; }
+  tips.hidden = false;
+  tips.innerHTML = `${DATA.n[i]}<br>lag ${DATA.dy[i]} · ${omrNavn(DATA.a[i])}`;
+  const r = rull.getBoundingClientRect(), l = e.clientX - r.left + rull.scrollLeft;
+  tips.style.left = Math.min(l + 12, rull.scrollLeft + rull.clientWidth - 310) + "px";
+  tips.style.top = (e.clientY - r.top + 14) + "px";
+});
+lerret.addEventListener("mouseleave", () => { tips.hidden = true; });
+lerret.addEventListener("click", e => { const [x, y] = posisjon(e), i = naermest(x, y); velg(i >= 0 ? i : -1); });
+lerret.addEventListener("keydown", e => { if (e.key === "Escape") velg(-1); });
+
+// ---------- panel ----------
+const panel = document.getElementById("panel");
+function lenke(i) { return `<button type="button" data-i="${i}">${DATA.n[i]}</button>`; }
+function visPanel() {
+  if (valgt < 0) {
+    panel.innerHTML = `<div class="omr">Ingen fil valgt</div><p style="margin:0">Klikk på en prikk, søk etter en fil, eller velg et av eksemplene over. Kartet viser da alt filen står på i oker, alt som bygger på den i blågrønt, og den lengste importkjeden ned til bunnen.</p>`;
+    return;
+  }
+  const i = valgt;
+  let nn = 0, no = 0; const per = new Map();
+  for (let j = 0; j < N; j++) { if (ned[j]) { nn++; per.set(DATA.a[j], (per.get(DATA.a[j]) || 0) + 1); } if (oppSett[j]) no++; }
+  const topp = [...per].sort((x, y) => y[1] - x[1]).slice(0, 6);
+  const pst = x => (100 * x / N).toLocaleString("nb-NO", { maximumFractionDigits: 1 });
+  const sti_ = DATA.n[i].replaceAll(".", "/") + ".lean";
+  panel.innerHTML = `
+    <div style="display:grid;gap:6px">
+      <div class="omr">${omrNavn(DATA.a[i])}</div>
+      <h2>${DATA.n[i]}</h2>
+      <a class="kilde" href="${repo}/blob/${DATA.commit}/Mathlib/${sti_}" target="_blank" rel="noopener">Åpne kildefilen på GitHub</a>
+    </div>
+    <dl class="fakta">
+      <dt>Lag fra bunnen</dt><dd>${DATA.dy[i]} av ${maksDybde}</dd>
+      <dt>Teoremer og lemmaer</dt><dd>${nf.format(DATA.t[i])}</dd>
+      <dt>Definisjoner m.m.</dt><dd>${nf.format(DATA.d[i])}</dd>
+      <dt>Linjer</dt><dd>${nf.format(DATA.l[i])}</dd>
+      <dt>Filer den står på</dt><dd class="ned">${nf.format(nn)} (${pst(nn)} %)</dd>
+      <dt>Filer som bygger på den</dt><dd class="opp">${nf.format(no)} (${pst(no)} %)</dd>
+    </dl>
+    ${topp.length ? `<div><h3>Grunnlaget fordelt på områder</h3><ul class="fordeling">${topp.map(([a, c]) =>
+      `<li><span>${omrNavn(a)}</span><span>${nf.format(c)}</span><span class="stolpe"><i style="width:${(100 * c / topp[0][1]).toFixed(1)}%"></i></span></li>`).join("")}</ul></div>` : ""}
+    <div><h3>Lengste kjede ned til bunnen</h3>
+      <ol class="kjede">${sti.map(j => `<li><span>${DATA.dy[j]}</span>${lenke(j)}</li>`).join("")}</ol></div>
+    <details><summary>Direkte importer (${DATA.imp[i].length})</summary>
+      <ul class="liste">${DATA.imp[i].map(j => `<li>${lenke(j)}</li>`).join("") || "<li>Ingen</li>"}</ul></details>`;
+}
+panel.addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b) velg(+b.dataset.i); });
+
+// ---------- eksempler ----------
+const knapper = document.getElementById("knapper");
+for (const [etikett, navn] of UTVALG) {
+  const i = indeks.get(navn); if (i === undefined) continue;
+  const b = document.createElement("button"); b.type = "button"; b.textContent = etikett; b.dataset.i = i;
+  b.setAttribute("aria-pressed", "false"); b.addEventListener("click", () => velg(i)); knapper.appendChild(b);
+}
+const nullstill = document.createElement("button"); nullstill.type = "button"; nullstill.textContent = "Nullstill";
+nullstill.addEventListener("click", () => velg(-1)); knapper.appendChild(nullstill);
+
+// ---------- søk ----------
+const felt = document.getElementById("sokefelt"), forslag = document.getElementById("forslag");
+let treff = [], aktivT = 0;
+function visForslag() {
+  const q = felt.value.trim().toLowerCase();
+  if (q.length < 2) { forslag.hidden = true; felt.setAttribute("aria-expanded", "false"); return; }
+  treff = [];
+  for (let i = 0; i < N && treff.length < 400; i++) if (DATA.n[i].toLowerCase().includes(q)) treff.push(i);
+  treff.sort((x, y) => DATA.n[x].length - DATA.n[y].length); treff = treff.slice(0, 10); aktivT = 0;
+  forslag.innerHTML = treff.length ? treff.map((i, k) => `<li role="option" id="f${k}" data-i="${i}" aria-selected="${k === 0}">${DATA.n[i]} <span>· lag ${DATA.dy[i]}</span></li>`).join("")
+    : `<li role="option" aria-disabled="true">Ingen fil matcher «${felt.value.trim()}»</li>`;
+  forslag.hidden = false; felt.setAttribute("aria-expanded", "true");
+}
+function marker(k) { aktivT = k; forslag.querySelectorAll("li").forEach((li, n) => li.setAttribute("aria-selected", String(n === k))); }
+felt.addEventListener("input", visForslag);
+felt.addEventListener("keydown", e => {
+  if (forslag.hidden || !treff.length) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); marker(Math.min(treff.length - 1, aktivT + 1)); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); marker(Math.max(0, aktivT - 1)); }
+  else if (e.key === "Enter") { e.preventDefault(); velgTreff(treff[aktivT]); }
+  else if (e.key === "Escape") { forslag.hidden = true; }
+});
+forslag.addEventListener("mousedown", e => { const li = e.target.closest("li[data-i]"); if (li) { e.preventDefault(); velgTreff(+li.dataset.i); } });
+felt.addEventListener("blur", () => setTimeout(() => { forslag.hidden = true; felt.setAttribute("aria-expanded", "false"); }, 120));
+function velgTreff(i) {
+  forslag.hidden = true; felt.value = DATA.n[i]; velg(i);
+  if (G) rull.scrollLeft = Math.max(0, G.px[i] - rull.clientWidth / 2);
+}
+
+// ---------- tabell ----------
+document.getElementById("tabell").innerHTML = `
+  <thead><tr><th>Område</th><th>Mappe</th><th class="n">Filer</th><th class="n">Teoremer</th><th class="n">Median</th><th>Dybde, 0–${maksDybde}</th></tr></thead>
+  <tbody>${omr.map(o => `<tr>
+    <td>${omrNavn(o.a)}</td><td class="mappe">${o.navn}</td>
+    <td class="n">${nf.format(o.filer)}</td><td class="n">${nf.format(o.t)}</td><td class="n">${o.med}</td>
+    <td><div class="dybdestolpe" title="kvartiler ${o.q1}–${o.q3}, median ${o.med}">
+      <i style="left:${(100 * o.q1 / maksDybde).toFixed(2)}%;width:${(100 * (o.q3 - o.q1) / maksDybde).toFixed(2)}%"></i>
+      <b style="left:calc(${(100 * o.med / maksDybde).toFixed(2)}% - 1px)"></b></div></td></tr>`).join("")}</tbody>`;
+
+// ---------- start ----------
+new ResizeObserver(() => tegn()).observe(rull);
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", tegn);
+new MutationObserver(tegn).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+document.fonts && document.fonts.ready.then(tegn);
+velg(indeks.get("Probability.CentralLimitTheorem") ?? -1);
+</script>
