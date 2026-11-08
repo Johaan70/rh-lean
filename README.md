@@ -47,6 +47,8 @@ Combined with OpenAI's formal 7/8 zero-free half-plane, verified in CI:
 every nontrivial zero has 1/8 ≤ Re ρ ≤ 7/8 and Im ρ ≠ 0.
 See [docs/kvasi-riemann.md](docs/kvasi-riemann.md) (Norwegian) for findings, limits and assessment.
 
+[mathlib-berggrunn/](mathlib-berggrunn/) (Norwegian) is an interactive map of Mathlib built from its actual import graph: every file placed by area and import depth, with the full dependency cone of any selected file.
+
 ## Next steps
 
 - Connect ZetaZeros topology to critical strip
